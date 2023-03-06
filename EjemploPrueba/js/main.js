@@ -1,69 +1,111 @@
-import * as THREE from "https://cdn.skypack.dev/three@0.132.2";
+import * as THREE from 'three';
 
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
-
+let container;
 let camera, scene, renderer;
-
-let groupDraggables;
-
-let skinnedMesh, skeleton, bones, skeletonHelper;
-
-let intersectObject;
-let pointDown = false;
-let raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
-let  initialpos = new THREE.Vector2();
-
 let controller1, controller2;
 let controllerGrip1, controllerGrip2;
-                        
-const intersected = [];                    
-const tempMatrix = new THREE.Matrix4();                        
-                  
+
+let raycaster;
+
+const intersected = [];
+const tempMatrix = new THREE.Matrix4();
+
+let group;
+
 init();
 animate();
 
 function init() {
 
+    container = document.createElement( 'div' );
+    document.body.appendChild( container );
+
     scene = new THREE.Scene();
+    scene.background = new THREE.Color( 0x808080 );
 
-    let dirLight = new THREE.DirectionalLight ( 0xffffff, 0.5 );
-    scene.add( dirLight );
-        
-    let hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.3 );
-    scene.add( hemiLight );
-    
+    camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 10 );
+    camera.position.set( 0, 1.6, 3 );
 
-    const aBoxGeometry = new THREE.BoxGeometry( 10, 2, 10 );
-      
-    initSkinnedMesh();
-    
-    groupDraggables = new THREE.Group();
-    
-    for (let i=0;i<bones.length;i++){
-        
-        let material = new THREE.MeshStandardMaterial( { color: 0x00ff00 } );
-        const object = new THREE.Mesh( aBoxGeometry, material );
-        object.name = i.toString();
-        object.HexNotSelected = material.emissive.getHex();
-        object.HexSelected =  0xff0000;
-        object.position.set(0, bones[0].position.y+i*5, 0);
-        groupDraggables.add(object);
+    const floorGeometry = new THREE.PlaneGeometry( 4, 4 );
+    const floorMaterial = new THREE.MeshStandardMaterial( {
+            color: 0xeeeeee,
+            roughness: 1.0,
+            metalness: 0.0
+    } );
+    const floor = new THREE.Mesh( floorGeometry, floorMaterial );
+    floor.rotation.x = - Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add( floor );
+
+    scene.add( new THREE.HemisphereLight( 0x808080, 0x606060 ) );
+
+    const light = new THREE.DirectionalLight( 0xffffff );
+    light.position.set( 0, 6, 0 );
+    light.castShadow = true;
+    light.shadow.camera.top = 2;
+    light.shadow.camera.bottom = - 2;
+    light.shadow.camera.right = 2;
+    light.shadow.camera.left = - 2;
+    light.shadow.mapSize.set( 4096, 4096 );
+    scene.add( light );
+
+    group = new THREE.Group();
+    scene.add( group );
+
+    const geometries = [
+            new THREE.BoxGeometry( 0.2, 0.2, 0.2 ),
+            new THREE.ConeGeometry( 0.2, 0.2, 64 ),
+            new THREE.CylinderGeometry( 0.2, 0.2, 0.2, 64 ),
+            new THREE.IcosahedronGeometry( 0.2, 8 ),
+            new THREE.TorusGeometry( 0.2, 0.04, 64, 32 )
+    ];
+
+    for ( let i = 0; i < 50; i ++ ) {
+
+            const geometry = geometries[ Math.floor( Math.random() * geometries.length ) ];
+            const material = new THREE.MeshStandardMaterial( {
+                    color: Math.random() * 0xffffff,
+                    roughness: 0.7,
+                    metalness: 0.0
+            } );
+
+            const object = new THREE.Mesh( geometry, material );
+
+            object.position.x = Math.random() * 4 - 2;
+            object.position.y = Math.random() * 2;
+            object.position.z = Math.random() * 4 - 2;
+
+            object.rotation.x = Math.random() * 2 * Math.PI;
+            object.rotation.y = Math.random() * 2 * Math.PI;
+            object.rotation.z = Math.random() * 2 * Math.PI;
+
+            object.scale.setScalar( Math.random() + 0.5 );
+
+            object.castShadow = true;
+            object.receiveShadow = true;
+
+            group.add( object );
+
     }
-    
-    scene.add(groupDraggables);
-        
-    camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
-    camera.position.z = 60;
-   
+
+    //
+
     renderer = new THREE.WebGLRenderer( { antialias: true } );
     renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( window.innerWidth, window.innerHeight );   
-    document.body.appendChild( renderer.domElement );
-    
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.shadowMap.enabled = true;
+    renderer.xr.enabled = true;
+    container.appendChild( renderer.domElement );
+
+    document.body.appendChild( VRButton.createButton( renderer ) );
+
+    // controllers
+
     controller1 = renderer.xr.getController( 0 );
     controller1.addEventListener( 'selectstart', onSelectStart );
     controller1.addEventListener( 'selectend', onSelectEnd );
@@ -83,7 +125,9 @@ function init() {
     controllerGrip2 = renderer.xr.getControllerGrip( 1 );
     controllerGrip2.add( controllerModelFactory.createControllerModel( controllerGrip2 ) );
     scene.add( controllerGrip2 );
-    
+
+    //
+
     const geometry = new THREE.BufferGeometry().setFromPoints( [ new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( 0, 0, - 1 ) ] );
 
     const line = new THREE.Line( geometry );
@@ -91,64 +135,60 @@ function init() {
     line.scale.z = 5;
 
     controller1.add( line.clone() );
-    controller2.add( line.clone() );    
+    controller2.add( line.clone() );
 
-    window.addEventListener( 'pointerdown', onPointerDown );
-    window.addEventListener( 'pointerup', onPointerUp );
-    window.addEventListener('mousemove', onPointerMove);
+    raycaster = new THREE.Raycaster();
+
+    //
+
+    window.addEventListener( 'resize', onWindowResize );
+
+}
+
+function onWindowResize() {
+
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize( window.innerWidth, window.innerHeight );
 
 }
 
 function onSelectStart( event ) {
 
-//    const controller = event.target;
-//
-//    const intersections = getIntersections( controller );
-//
-//    if ( intersections.length > 0 ) {
-//
-//            const intersection = intersections[ 0 ];
-//
-//            const object = intersection.object;
-//            object.material.emissive.b = 1;
-//            controller.attach( object );
-//
-//            controller.userData.selected = object;
-//
-//    }
-    
-    pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-    pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-    raycaster.setFromCamera(pointer, camera);
-    initialpos.x = pointer.x;
-    initialpos.y = pointer.y;
-    const found = raycaster.intersectObjects(groupDraggables.children, true);
-    if (found.length) {
-        intersectObject = found[0].object;
-        intersectObject.currentIntersected = true;
-        intersectObject.material.emissive.setHex(intersectObject.HexSelected);
+    const controller = event.target;
+
+    const intersections = getIntersections( controller );
+
+    if ( intersections.length > 0 ) {
+
+            const intersection = intersections[ 0 ];
+
+            const object = intersection.object;
+            object.material.emissive.b = 1;
+            controller.attach( object );
+
+            controller.userData.selected = object;
+
     }
-    pointDown = true;
 
 }
 
 function onSelectEnd( event ) {
 
-//    const controller = event.target;
-//
-//    if ( controller.userData.selected !== undefined ) {
-//
-//            const object = controller.userData.selected;
-//            object.material.emissive.b = 0;
-//            group.attach( object );
-//
-//            controller.userData.selected = undefined;
-//
-//    }
+    const controller = event.target;
 
-    intersectObject.currentIntersected = false;
-    pointDown = false;
-    intersectObject.material.emissive.setHex(intersectObject.HexNotSelected);
+    if ( controller.userData.selected !== undefined ) {
+
+            const object = controller.userData.selected;
+            object.material.emissive.b = 0;
+            group.attach( object );
+
+            controller.userData.selected = undefined;
+
+    }
+
+
 }
 
 function getIntersections( controller ) {
@@ -200,158 +240,12 @@ function cleanIntersected() {
 
 }
 
-function onPointerDown( event ) {
-    pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-    pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-    raycaster.setFromCamera(pointer, camera);
-    initialpos.x = pointer.x;
-    initialpos.y = pointer.y;
-    const found = raycaster.intersectObjects(groupDraggables.children, true);
-    if (found.length) {
-        intersectObject = found[0].object;
-        intersectObject.currentIntersected = true;
-        intersectObject.material.emissive.setHex(intersectObject.HexSelected);
-    }
-    pointDown = true;
-}
-
-function onPointerUp( event ) {
-    intersectObject.currentIntersected = false;
-    pointDown = false;
-    intersectObject.material.emissive.setHex(intersectObject.HexNotSelected);
-}
-
-
-function onPointerMove( event ) {
-        pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-        pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-        if(pointDown){
-            if(intersectObject!==  undefined && intersectObject.currentIntersected){
-              intersectObject.position.x += pointer.x - initialpos.x; 
-              intersectObject.position.y += pointer.y - initialpos.y;
-              skeleton.bones[parseInt(intersectObject.name)].position.x += pointer.x - initialpos.x;
-              skeleton.bones[parseInt(intersectObject.name)].position.y += pointer.y - initialpos.y;
-              for(let i = parseInt(intersectObject.name)+1;i<groupDraggables.children.length;i++){
-                  groupDraggables.children[i].position.x += pointer.x - initialpos.x;
-                  groupDraggables.children[i].position.y += pointer.y - initialpos.y;
-              }              
-            }  
-        }
-}
-
-function initSkinnedMesh() {
-
-    const segmentHeight = 5;
-    const segmentCount = 5;
-    const height = segmentHeight * segmentCount;
-    const halfHeight = height * 0.5;
-
-    const sizing = {
-            segmentHeight,
-            segmentCount,
-            height,
-            halfHeight
-    };
-
-    const geometry = createGeometry( sizing );
-    
-    const material = new THREE.MeshStandardMaterial( {
-            color: 0x156289,
-           emissive: 0x072534,
-            side: THREE.DoubleSide,
-            flatShading: true,
-            wireframe: true
-    } );
-
-
-    const bones = createBones( sizing );
-    
-    skeleton = new THREE.Skeleton( bones );
-    
-    skinnedMesh = new THREE.SkinnedMesh( geometry, material );
-
-    const rootBone = skeleton.bones[ 0 ];
-    
-    skinnedMesh.add( rootBone );
-
-    skinnedMesh.bind( skeleton );
-
-    scene.add( skinnedMesh );
-}
-
-function createGeometry( sizing ) {
-
-    const geometry = new THREE.CylinderGeometry(
-            5, // radiusTop
-            5, // radiusBottom
-            sizing.height, // height
-            4, // radiusSegments
-            sizing.segmentCount * 1, // heightSegments
-            true // openEnded
-    );
-
-
-    const position = geometry.attributes.position;
-
-    const vertex = new THREE.Vector3();
-
-    const skinIndices = [];
-    const skinWeights = [];
-
-    for ( let i = 0; i < position.count; i ++ ) {
-            vertex.fromBufferAttribute( position, i );
-
-            const y = ( vertex.y + sizing.halfHeight );
-
-            const skinIndex = Math.floor( y / sizing.segmentHeight );
-            const skinWeight = ( y % sizing.segmentHeight ) / sizing.segmentHeight;
-
-            skinIndices.push( skinIndex, skinIndex + 1, 0, 0 );
-            skinWeights.push( 1 - skinWeight, skinWeight, 0, 0 );
-
-    }
-
-    geometry.setAttribute( 'skinIndex', new THREE.Uint16BufferAttribute( skinIndices, 4 ) );
-    geometry.setAttribute( 'skinWeight', new THREE.Float32BufferAttribute( skinWeights, 4 ) );
-
-    return geometry;
-
-    }
-
-function createBones( sizing ) {
-
-    bones = [];
-
-    let prevBone = new THREE.Bone();
-    bones.push( prevBone );
-    prevBone.position.y = - sizing.halfHeight;
-
-    for ( let i = 0; i < sizing.segmentCount; i ++ ) {
-        const bone = new THREE.Bone();
-        bone.position.y = sizing.segmentHeight;
-        bones.push( bone );
-        prevBone.add( bone );
-        prevBone = bone;
-    }
-    return bones;
-}
-
-function onWindowResize() {
-
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize( window.innerWidth, window.innerHeight );
-
-}
+//
 
 function animate() {
 
-//    requestAnimationFrame( animate );
-//    
-//
-//    renderer.render( scene, camera );
-
     renderer.setAnimationLoop( render );
+
 }
 
 function render() {
@@ -364,3 +258,4 @@ function render() {
     renderer.render( scene, camera );
 
 }
+
