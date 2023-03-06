@@ -12,7 +12,7 @@ let controllerGrip1, controllerGrip2;
 const intersected = [];
 const tempMatrix = new THREE.Matrix4();
 
-let group;
+//let group;
 
 let groupDraggables;
 
