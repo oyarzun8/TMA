@@ -114,7 +114,7 @@ function init() {
         object.name = i.toString();
         object.HexNotSelected = material.emissive.getHex();
         object.HexSelected =  0xff0000;
-        object.position.set(0, bones[0].position.y+i*5, 0);
+        object.position.set(0, bones[0].position.y+i*0.05, 0);
         groupDraggables.add(object);
     }
     
@@ -288,7 +288,7 @@ function cleanIntersected() {
 
 function initSkinnedMesh() {
 
-    const segmentHeight = 5;
+    const segmentHeight = 0.05;
     const segmentCount = 5;
     const height = segmentHeight * segmentCount;
     const halfHeight = height * 0.5;
@@ -329,10 +329,10 @@ function initSkinnedMesh() {
 function createGeometry( sizing ) {
 
     const geometry = new THREE.CylinderGeometry(
-            5, // radiusTop
-            5, // radiusBottom
+            0.05, // radiusTop
+            0.05, // radiusBottom
             sizing.height, // height
-            4, // radiusSegments
+            0.04, // radiusSegments
             sizing.segmentCount * 1, // heightSegments
             true // openEnded
     );
