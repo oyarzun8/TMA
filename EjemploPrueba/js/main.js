@@ -62,7 +62,7 @@ function init() {
     light.shadow.camera.left = - 2;
     light.shadow.mapSize.set( 4096, 4096 );
     scene.add( light );
-
+    /*
     group = new THREE.Group();
     scene.add( group );
 
@@ -74,7 +74,7 @@ function init() {
             new THREE.TorusGeometry( 0.2, 0.04, 64, 32 )
     ];
 
-    /*for ( let i = 0; i < 50; i ++ ) {
+    for ( let i = 0; i < 50; i ++ ) {
 
             const geometry = geometries[ Math.floor( Math.random() * geometries.length ) ];
             const material = new THREE.MeshStandardMaterial( {
