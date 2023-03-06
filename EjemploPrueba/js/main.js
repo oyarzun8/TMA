@@ -9,8 +9,6 @@ let camera, scene, renderer;
 let controller1, controller2;
 let controllerGrip1, controllerGrip2;
 
-let raycaster;
-
 const intersected = [];
 const tempMatrix = new THREE.Matrix4();
 
