@@ -101,7 +101,7 @@ function init() {
     }*/
     
     
-    const aBoxGeometry = new THREE.BoxGeometry( 10, 2, 10 );
+    const aBoxGeometry = new THREE.BoxGeometry( 0.1, 0.02, 0.1 );
       
     initSkinnedMesh();
     
