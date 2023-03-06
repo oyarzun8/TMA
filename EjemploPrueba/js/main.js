@@ -16,6 +16,16 @@ const tempMatrix = new THREE.Matrix4();
 
 let group;
 
+let groupDraggables;
+
+let skinnedMesh, skeleton, bones, skeletonHelper;
+
+let intersectObject;
+let pointDown = false;
+let raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let  initialpos = new THREE.Vector2();
+
 init();
 animate();
 
@@ -64,7 +74,7 @@ function init() {
             new THREE.TorusGeometry( 0.2, 0.04, 64, 32 )
     ];
 
-    for ( let i = 0; i < 50; i ++ ) {
+    /*for ( let i = 0; i < 50; i ++ ) {
 
             const geometry = geometries[ Math.floor( Math.random() * geometries.length ) ];
             const material = new THREE.MeshStandardMaterial( {
@@ -90,7 +100,27 @@ function init() {
 
             group.add( object );
 
+    }*/
+    
+    
+    const aBoxGeometry = new THREE.BoxGeometry( 10, 2, 10 );
+      
+    initSkinnedMesh();
+    
+    groupDraggables = new THREE.Group();
+    
+    for (let i=0;i<bones.length;i++){
+        
+        let material = new THREE.MeshStandardMaterial( { color: 0x00ff00 } );
+        const object = new THREE.Mesh( aBoxGeometry, material );
+        object.name = i.toString();
+        object.HexNotSelected = material.emissive.getHex();
+        object.HexSelected =  0xff0000;
+        object.position.set(0, bones[0].position.y+i*5, 0);
+        groupDraggables.add(object);
     }
+    
+    scene.add(groupDraggables);
 
     //
 
@@ -156,38 +186,54 @@ function onWindowResize() {
 
 function onSelectStart( event ) {
 
-    const controller = event.target;
-
-    const intersections = getIntersections( controller );
-
-    if ( intersections.length > 0 ) {
-
-            const intersection = intersections[ 0 ];
-
-            const object = intersection.object;
-            object.material.emissive.b = 1;
-            controller.attach( object );
-
-            controller.userData.selected = object;
-
+//    const controller = event.target;
+//
+//    const intersections = getIntersections( controller );
+//
+//    if ( intersections.length > 0 ) {
+//
+//            const intersection = intersections[ 0 ];
+//
+//            const object = intersection.object;
+//            object.material.emissive.b = 1;
+//            controller.attach( object );
+//
+//            controller.userData.selected = object;
+//
+//    }
+    
+    pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+    pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+    raycaster.setFromCamera(pointer, camera);
+    initialpos.x = pointer.x;
+    initialpos.y = pointer.y;
+    const found = raycaster.intersectObjects(groupDraggables.children, true);
+    if (found.length) {
+        intersectObject = found[0].object;
+        intersectObject.currentIntersected = true;
+        intersectObject.material.emissive.setHex(intersectObject.HexSelected);
     }
+    pointDown = true;
 
 }
 
 function onSelectEnd( event ) {
 
-    const controller = event.target;
+    //    const controller = event.target;
+//
+//    if ( controller.userData.selected !== undefined ) {
+//
+//            const object = controller.userData.selected;
+//            object.material.emissive.b = 0;
+//            group.attach( object );
+//
+//            controller.userData.selected = undefined;
+//
+//    }
 
-    if ( controller.userData.selected !== undefined ) {
-
-            const object = controller.userData.selected;
-            object.material.emissive.b = 0;
-            group.attach( object );
-
-            controller.userData.selected = undefined;
-
-    }
-
+    intersectObject.currentIntersected = false;
+    pointDown = false;
+    intersectObject.material.emissive.setHex(intersectObject.HexNotSelected);
 
 }
 
