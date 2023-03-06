@@ -1,7 +1,8 @@
 import * as THREE from "https://cdn.skypack.dev/three@0.132.2";
 
-import {VRButton} from 'three/addons/webxr/VRButton.js';
-import {XRControllerModelFactory} from 'three/addons/webxr/XRControllerModelFactory.js';
+import { VRButton } from 'three/addons/webxr/VRButton.js';
+
+import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
 
 let camera, scene, renderer;
@@ -19,6 +20,7 @@ let  initialpos = new THREE.Vector2();
 let controller1, controller2;
 let controllerGrip1, controllerGrip2;
                         
+const intersected = [];                    
 const tempMatrix = new THREE.Matrix4();                        
                   
 init();
