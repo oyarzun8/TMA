@@ -329,10 +329,10 @@ function initSkinnedMesh() {
 function createGeometry( sizing ) {
 
     const geometry = new THREE.CylinderGeometry(
-            1.5, // radiusTop
-            1.5, // radiusBottom
+            1.0, // radiusTop
+            1.0, // radiusBottom
             sizing.height, // height
-            1.2, // radiusSegments
+            0.8, // radiusSegments
             sizing.segmentCount * 1, // heightSegments
             true // openEnded
     );
