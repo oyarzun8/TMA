@@ -101,7 +101,7 @@ function init() {
     }*/
     
     
-    const aBoxGeometry = new THREE.BoxGeometry( 0.05, 0.01, 0.05 );
+    const aBoxGeometry = new THREE.BoxGeometry( 0.1, 0.02, 0.1 );
       
     initSkinnedMesh();
     
@@ -115,7 +115,7 @@ function init() {
         object.HexNotSelected = material.emissive.getHex();
         object.HexSelected =  0xff0000;
         //object.position.set(0, bones[0].position.y+i*0.05, 0);
-        object.position.set(0, 0+i*0.05, 0);
+        object.position.set(0, 0+i*0.1, 0);
         groupDraggables.add(object);
     }
     
