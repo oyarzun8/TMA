@@ -401,3 +401,21 @@ function render() {
 
 }
 
+
+function onPointerMove( event ) {
+        pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+        pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+        if(pointDown){
+            if(intersectObject!==  undefined && intersectObject.currentIntersected){
+              intersectObject.position.x += pointer.x - initialpos.x; 
+              intersectObject.position.y += pointer.y - initialpos.y;
+              skeleton.bones[parseInt(intersectObject.name)].position.x += pointer.x - initialpos.x;
+              skeleton.bones[parseInt(intersectObject.name)].position.y += pointer.y - initialpos.y;
+              for(let i = parseInt(intersectObject.name)+1;i<groupDraggables.children.length;i++){
+                  groupDraggables.children[i].position.x += pointer.x - initialpos.x;
+                  groupDraggables.children[i].position.y += pointer.y - initialpos.y;
+              }              
+            }  
+        }
+}
+
