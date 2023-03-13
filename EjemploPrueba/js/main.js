@@ -237,12 +237,12 @@ function onSelectEnd( event ) {
 
 function getIntersections( controller ) {
 
-    //tempMatrix.identity().extractRotation( controller.matrixWorld );
+    tempMatrix.identity().extractRotation( controller.matrixWorld );
 
-    //raycaster.ray.origin.setFromMatrixPosition( controller.matrixWorld );
-    //raycaster.ray.direction.set( 0, 0, - 1 ).applyMatrix4( tempMatrix );
+    raycaster.ray.origin.setFromMatrixPosition( controller.matrixWorld );
+    raycaster.ray.direction.set( 0, 0, - 1 ).applyMatrix4( tempMatrix );
 
-    //return raycaster.intersectObjects( groupDraggables.children, false );
+    return raycaster.intersectObjects( groupDraggables.children, false );
 
 }
 
